@@ -1,0 +1,40 @@
+syntax="proto2";
+package renju;
+
+import "gogo.proto";
+
+option (gogoproto.unmarshaler_all) = true;
+option (gogoproto.marshaler_all) = true;
+option (gogoproto.goproto_enum_prefix_all) = false;
+
+// 事件类型
+enum PlayEvent {
+    MoveChessEvent       =   0x2;            //走棋请求
+    SurrenderEvent       =   0x3;            //投降请求
+    DrawGameEvent        =   0x4;            //和棋请求
+    DrawGameAnsEvent     =   0x5;			 //和棋应答
+    BackMoveEvent        =   0x6;			 //悔棋请求
+    BackMoveAnsEvent     =   0x7;			 //悔棋应答
+    GameOverEvent        =   -1;             //比赛结束
+}
+
+//通告类型
+enum NotifyEvent {
+    NotifyJoinGameEvent          =   1002;      //用户加入
+	NotifyLeaveGameEvent         =   1003;	    //用户离开
+	NotifyGameStartEvent         =   1004;		//游戏开始
+	NotifyMoveChessRespEvent     =   1005; 		//移动棋子结果
+	NotifyGameOverEvent          =   1006;		//游戏结束
+	NotifyDrawGameEvent          =   1007;		//和棋请求
+	NotifyDrawGameAnsEvent       =   1008;		//和棋应答
+	NotifyBackMoveEvent          =   1009;		//悔棋请求
+	NotifyBackMoveAnsEvent       =   1010;	    //悔棋应答
+	NotifyBoradDataEvent         =   1011;		//棋盘信息
+}
+
+//桌子标识
+message TableIndex {
+	optional uint64 	tid 	=	1[(gogoproto.nullable) = false];	// 桌子ID
+	optional string 	key 	=	2[(gogoproto.nullable) = false];	// 唯一key
+}
+
