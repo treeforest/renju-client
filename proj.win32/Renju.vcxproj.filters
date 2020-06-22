@@ -10,6 +10,9 @@
     <Filter Include="src">
       <UniqueIdentifier>{bb6c862e-70e9-49d9-81b7-3829a6f50471}</UniqueIdentifier>
     </Filter>
+    <Filter Include="logic">
+      <UniqueIdentifier>{d9be3b4c-94d2-4bd9-971c-a0acdba18e72}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -32,6 +35,15 @@
     </ClCompile>
     <ClCompile Include="..\Classes\Pool.cpp">
       <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="InterFace.cpp">
+      <Filter>logic</Filter>
+    </ClCompile>
+    <ClCompile Include="RestrictedMove.cpp">
+      <Filter>logic</Filter>
+    </ClCompile>
+    <ClCompile Include="Robot.cpp">
+      <Filter>logic</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -61,6 +73,15 @@
     </ClInclude>
     <ClInclude Include="..\Classes\Pool.h">
       <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="InterFace.h">
+      <Filter>logic</Filter>
+    </ClInclude>
+    <ClInclude Include="RestrictedMove.h">
+      <Filter>logic</Filter>
+    </ClInclude>
+    <ClInclude Include="Robot.h">
+      <Filter>logic</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -154,7 +154,10 @@ xcopy "$(ProjectDir)..\Resources" "$(OutDir)\Resources\" /D /E /I /F /Y
     <ClCompile Include="..\Classes\Net.cpp" />
     <ClCompile Include="..\Classes\Pool.cpp" />
     <ClCompile Include="..\Classes\RenjuScene.cpp" />
+    <ClCompile Include="InterFace.cpp" />
+    <ClCompile Include="RestrictedMove.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Robot.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Classes\AppDelegate.h" />
@@ -165,7 +168,10 @@ xcopy "$(ProjectDir)..\Resources" "$(OutDir)\Resources\" /D /E /I /F /Y
     <ClInclude Include="..\Classes\Pool.h" />
     <ClInclude Include="..\Classes\public.h" />
     <ClInclude Include="..\Classes\RenjuScene.h" />
+    <ClInclude Include="InterFace.h" />
+    <ClInclude Include="RestrictedMove.h" />
     <ClInclude Include="main.h" />
+    <ClInclude Include="Robot.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\cocos2d\cocos\2d\libcocos2d.vcxproj">
