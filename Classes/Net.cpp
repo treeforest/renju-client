@@ -6,6 +6,9 @@
 #include "cocos2d.h"
 USING_NS_CC;
 
+/*
+ * 静态成员变量
+ */
 SOCKET Net::m_connetSocket = INVALID_SOCKET;
 bool Net::m_closed = true; // 初始化套接字未连接，则其连接是关闭的。
 HANDLE Net::m_hRecvHandle = INVALID_HANDLE_VALUE;
@@ -79,12 +82,13 @@ bool Net::Start()
 /*
  * 发送数据
  */
-void Net::Send(unsigned int msgID, unsigned int msgLen, char * data)
+void Net::Send(unsigned int msgLen, unsigned int serviceID, unsigned int methodID, char * data)
 {
 	Message * msg = m_msgPool->Get(msgLen);
-	msg->msgID = msgID;
-	msg->msgLen = msgLen;
-	memcpy(msg->data, data, msg->msgLen);
+	msg->SetMsgLen(msgLen);
+	msg->SetServiceID(serviceID);
+	msg->SetMethodID(methodID);
+	msg->SetData(data);
 
 	// 放入发送队列中
 	m_sendQueue.push(msg);
@@ -139,12 +143,14 @@ unsigned __stdcall Net::RecvThreadFunc(void* args)
 	char * buf = NULL;	// 接收缓冲区
 	bool ok = false;	// 返回值
 	unsigned int msgLen = 0;
-	unsigned int msgID = 0;
+	unsigned int serviceID = 0;
+	unsigned int methodID = 0;
 
 	while (!m_closed)
 	{
 		msgLen = 0;
-		msgID = 0;
+		serviceID = 0;
+		methodID = 0;
 
 		// 接收msgLen
 		ok = Recv(m_connetSocket, (char*)&(msgLen), 4, 0);
@@ -156,19 +162,28 @@ unsigned __stdcall Net::RecvThreadFunc(void* args)
 			continue;
 		}
 
-		// 接收msgID
-		ok = Recv(m_connetSocket, (char*)&(msgID), 4, 0);
+		// 接收serviceID
+		ok = Recv(m_connetSocket, (char*)&(serviceID), 4, 0);
 		if (!ok) {
 			if (WSAGetLastError() == SOCKET_ERROR) {
 				CCLOG("Recv msgID error: %ld", SOCKET_ERROR);
-				Close();// 关闭网络
+				Close();// 关闭链接
+			}
+			continue;
+		}
+
+		// 接收methodID
+		ok = Recv(m_connetSocket, (char*)&(methodID), 4, 0);
+		if (!ok) {
+			if (WSAGetLastError() == SOCKET_ERROR) {
+				CCLOG("Recv msgID error: %ld", SOCKET_ERROR);
+				Close();// 关闭链接
 			}
 			continue;
 		}
 
 		// 接收消息主体data
 		msg = m_msgPool->Get(msgLen);
-
 		ok = Recv(m_connetSocket, (char *)msg->data, msgLen, 0);
 		if (!ok) {
 			if (WSAGetLastError() == SOCKET_ERROR) {
@@ -180,8 +195,10 @@ unsigned __stdcall Net::RecvThreadFunc(void* args)
 		}
 
 		// 将消息放入消息队列
-		msg->msgID = msgID;
-		msg->msgLen = msgLen;
+		msg->SetMsgLen(msgLen);
+		msg->SetServiceID(serviceID);
+		msg->SetMethodID(methodID);
+
 		m_recvQueue.push(msg);
 	}
 
@@ -249,7 +266,7 @@ unsigned __stdcall Net::SendThreadFunc(void* arg)
 		m_sendQueue.pop();
 		
 		buf = (char*)msg;
-		nLen = msg->msgLen + 8;
+		nLen = msg->msgLen + msg->GetMsgHeadBinaryCnt(); // 接收的数据字节：数据头字节+真正数据字节
 
 		// 确保发送所有数据
 		while (nLen > 0)

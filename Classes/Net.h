@@ -24,7 +24,7 @@ public:
 	static bool Connect(const char* ip, short port = 9999);
 	static bool Start();
 
-	static void Send(unsigned int msgID, unsigned int msgLen, char * data);
+	static void Send(unsigned int msgLen, unsigned int serviceID, unsigned int methodID, char * data);
 	static Message * Recv();
 
 	static void Put(Message * msg);

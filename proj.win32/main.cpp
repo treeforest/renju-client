@@ -42,7 +42,8 @@ int WINAPI _tWinMain(HINSTANCE hInstance,
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
 
-	//TestNet();
+	TestNet();
+	return 0;
 
     // create the application instance
     AppDelegate app;
@@ -53,7 +54,7 @@ void TestNet() {
 	Net::Connect("127.0.0.1", 9999);
 	Net::Start();
 
-	Net::Send(0, 5, "Hello");
+	Net::Send(5, 0, 1, "Hello");
 
 	Message * msg = NULL;
 	while (1)
@@ -64,6 +65,6 @@ void TestNet() {
 			continue; 
 		}
 
-		CCLOG("len:%d ID:%d data:%s", msg->msgLen, msg->msgID, msg->data);
+		CCLOG("len:%d ID:%d data:%s", msg->msgLen, msg->serviceID, msg->data);
 	}
 }

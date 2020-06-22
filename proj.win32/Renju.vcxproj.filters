@@ -27,9 +27,6 @@
     <ClCompile Include="..\Classes\Bead.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\Classes\DataPack.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="..\Classes\Net.cpp">
       <Filter>src</Filter>
     </ClCompile>
@@ -60,9 +57,6 @@
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="..\Classes\public.h">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Classes\DataPack.h">
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="..\Classes\Net.h">
