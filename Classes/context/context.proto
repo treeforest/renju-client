@@ -1,0 +1,21 @@
+syntax="proto3";
+option go_package = ".;context"; //协议包名
+
+// 网络层错误代码
+enum Code {
+    SUCCESS             = 0;
+    ERR_CHECKSUM        = 1;    // 校验失败
+    ERR_GET_HEAD        = 2;    // 获取 head 失败
+    ERR_UNPACK_HEAD     = 3;    // 解包失败
+    ERR_GET_DATA        = 4;    // 获取 data 失败
+}
+
+// 服务传输上下文
+message Context
+{
+    Code        result      = 1; // 返回码
+    uint32      session     = 2; // 登录后会获得session
+    uint32      serviceId   = 3; // 服务id
+    uint32      methodId    = 4; // 方法id
+    bytes       data        = 5; // 传输的数据
+}

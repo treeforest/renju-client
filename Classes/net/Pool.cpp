@@ -6,12 +6,12 @@ Message * Pool::Get(unsigned int msgLen)
 	Message * msg = NULL;
 
 	if (m_free.empty()) {
-		msg = (Message*)malloc(sizeof(char) * (msgLen + 12));
+		msg = (Message*)malloc(sizeof(char) * (msgLen + 8));
 	}
 	else {
 		msg = m_free.front();
 		m_free.pop();
-		msg = (Message*)realloc(msg, sizeof(char) * (msgLen + 12));
+		msg = (Message*)realloc(msg, sizeof(char) * (msgLen + 8));
 	}
 
 	return msg;

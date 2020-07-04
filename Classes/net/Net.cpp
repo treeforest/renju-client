@@ -3,9 +3,6 @@
 #pragma comment(lib, "Ws2_32.lib")
 #include <process.h>
 
-#include "cocos2d.h"
-USING_NS_CC;
-
 /*
  * 静态成员变量
  */
@@ -35,13 +32,13 @@ bool Net::Connect(const char* ip, short port)
 
 	iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
 	if (iResult != NO_ERROR) {
-		CCLOG("WSAStartup failed: %d\n", iResult);
+		printf("WSAStartup failed: %d\n", iResult);
 		return false;
 	}
 
 	m_connetSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (m_connetSocket == INVALID_SOCKET) {
-		CCLOG("Error at socket(): %ld\n", WSAGetLastError());
+		printf("Error at socket(): %ld\n", WSAGetLastError());
 		WSACleanup();
 		return false;
 	}
@@ -54,7 +51,7 @@ bool Net::Connect(const char* ip, short port)
 	iResult = connect(m_connetSocket, (SOCKADDR*)&addr, sizeof(addr));
 	if (iResult == SOCKET_ERROR) {
 		closesocket(m_connetSocket);
-		CCLOG("Unable to connect to server: %ld\n", WSAGetLastError());
+		printf("Unable to connect to server: %s:%d\n", ip, port);
 		WSACleanup();
 		return false;
 	}
@@ -69,11 +66,11 @@ bool Net::Connect(const char* ip, short port)
 bool Net::Start()
 {
 	if (!StartSend()) {
-		CCLOG("start send failed.");
+		printf("start send failed.");
 		return false;
 	}
 	if (!StartRecv()) {
-		CCLOG("start recv failed.");
+		printf("start recv failed.");
 		return false;
 	}
 	return true;
@@ -82,13 +79,10 @@ bool Net::Start()
 /*
  * 发送数据
  */
-void Net::Send(unsigned int msgLen, unsigned int serviceID, unsigned int methodID, char * data)
+void Net::Send(unsigned int msgLen, const char * data)
 {
 	Message * msg = m_msgPool->Get(msgLen);
-	msg->SetMsgLen(msgLen);
-	msg->SetServiceID(serviceID);
-	msg->SetMethodID(methodID);
-	msg->SetData(data);
+	msg->Set(msgLen, data);
 
 	// 放入发送队列中
 	m_sendQueue.push(msg);
@@ -126,7 +120,7 @@ bool Net::StartRecv()
 {
 	m_hRecvHandle = (HANDLE)_beginthreadex(NULL, 0, RecvThreadFunc, NULL, 0, NULL);
 	if (m_hRecvHandle == INVALID_HANDLE_VALUE) {
-		CCLOG("create recv thread failed, error = %ld\n", WSAGetLastError());
+		printf("create recv thread failed, error = %ld\n", WSAGetLastError());
 		return false;
 	}
 	return true;
@@ -142,63 +136,57 @@ unsigned __stdcall Net::RecvThreadFunc(void* args)
 	int nLast = 0;		// 剩余接收的字节数
 	char * buf = NULL;	// 接收缓冲区
 	bool ok = false;	// 返回值
-	unsigned int msgLen = 0;
-	unsigned int serviceID = 0;
-	unsigned int methodID = 0;
+	unsigned int dataLen = 0;
+	unsigned int checksum = 0;
 
 	while (!m_closed)
 	{
-		msgLen = 0;
-		serviceID = 0;
-		methodID = 0;
+		dataLen = 0;
+		checksum = 0;
 
-		// 接收msgLen
-		ok = Recv(m_connetSocket, (char*)&(msgLen), 4, 0);
+		// 接收dataLen
+		ok = Recv(m_connetSocket, (char*)&(dataLen), 4, 0);
 		if (!ok) {
 			if (WSAGetLastError() == SOCKET_ERROR) {
-				CCLOG("Recv msgLen error: %ld", SOCKET_ERROR);
+				printf("Recv dataLen error: %ld\n", SOCKET_ERROR);
 				Close();// 关闭链接
 			}
 			continue;
 		}
 
-		// 接收serviceID
-		ok = Recv(m_connetSocket, (char*)&(serviceID), 4, 0);
+		// 接收checksum
+		ok = Recv(m_connetSocket, (char*)&(checksum), 4, 0);
 		if (!ok) {
 			if (WSAGetLastError() == SOCKET_ERROR) {
-				CCLOG("Recv msgID error: %ld", SOCKET_ERROR);
-				Close();// 关闭链接
-			}
-			continue;
-		}
-
-		// 接收methodID
-		ok = Recv(m_connetSocket, (char*)&(methodID), 4, 0);
-		if (!ok) {
-			if (WSAGetLastError() == SOCKET_ERROR) {
-				CCLOG("Recv msgID error: %ld", SOCKET_ERROR);
+				printf("Recv msgID error: %ld\n", SOCKET_ERROR);
 				Close();// 关闭链接
 			}
 			continue;
 		}
 
 		// 接收消息主体data
-		msg = m_msgPool->Get(msgLen);
-		ok = Recv(m_connetSocket, (char *)msg->data, msgLen, 0);
+		msg = m_msgPool->Get(dataLen);
+		ok = Recv(m_connetSocket, (char *)msg->data, dataLen, 0);
 		if (!ok) {
 			if (WSAGetLastError() == SOCKET_ERROR) {
-				CCLOG("Recv msgID error: %ld", SOCKET_ERROR);
+				printf("Recv msgID error: %ld\n", SOCKET_ERROR);
 				m_msgPool->Put(msg);
 				Close();// 关闭网络
 			}
 			continue;
 		}
 
-		// 将消息放入消息队列
-		msg->SetMsgLen(msgLen);
-		msg->SetServiceID(serviceID);
-		msg->SetMethodID(methodID);
+		msg->dataLen = dataLen;
+		msg->checksum = checksum;
 
+		// crc32 IEEE 检测校验和
+		if (false == msg->ChecksumIEEE()) {
+			printf("Checksum error\n");
+			m_msgPool->Put(msg);
+			continue;
+		}
+
+		// 将消息放入消息队列
 		m_recvQueue.push(msg);
 	}
 
@@ -240,7 +228,7 @@ bool Net::StartSend()
 {
 	m_hSendHandle = (HANDLE)_beginthreadex(NULL, 0, SendThreadFunc, NULL, 0, NULL);
 	if (m_hSendHandle == INVALID_HANDLE_VALUE) {
-		CCLOG("create send thread failed, error = %ld\n", WSAGetLastError());
+		printf("create send thread failed, error = %ld\n", WSAGetLastError());
 		return false;
 	}
 	return true;
@@ -266,14 +254,14 @@ unsigned __stdcall Net::SendThreadFunc(void* arg)
 		m_sendQueue.pop();
 		
 		buf = (char*)msg;
-		nLen = msg->msgLen + msg->GetMsgHeadBinaryCnt(); // 接收的数据字节：数据头字节+真正数据字节
+		nLen = msg->dataLen + msg->MsgHeadBytes(); // 接收的数据字节：数据头字节+真正数据字节
 
 		// 确保发送所有数据
 		while (nLen > 0)
 		{
 			nSendSize = send(m_connetSocket, buf, nLen, 0);
 			if (nSendSize == SOCKET_ERROR) {
-				CCLOG("send failed with error: %d\n", WSAGetLastError());
+				printf("send failed with error: %d\n", WSAGetLastError());
 				m_msgPool->Put(msg);
 				Close();
 				break;
